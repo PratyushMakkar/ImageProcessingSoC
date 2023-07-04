@@ -6,6 +6,7 @@ SDLApp::SDLApp(SDL_Surface *window_surface_ptr, SDL_Window* window_ptr) {
 }
 
 SDLApp::~SDLApp() {
+  
 }
 
 

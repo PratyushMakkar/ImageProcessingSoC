@@ -10,11 +10,11 @@
 
 class SDLApp {
   private:
-    SDL_Renderer* render_ptr;
     SDL_Surface* window_surface_ptr;
     SDL_Window* window_ptr;
 
   public:
+    SDL_Renderer* render_ptr;
     SDLApp(SDL_Surface *window_surface_ptr, SDL_Window* window_ptr);
     ~SDLApp();
     void prepareScene();
