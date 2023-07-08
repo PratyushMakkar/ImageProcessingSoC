@@ -2,47 +2,59 @@
 #include <SDL2/SDL.h>
 
 #include "defs.h"
-#include "paddle.h"
+#include "drawables/paddle.h"
 
 int main(int agrc, char** argv) {
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    std::cout << "Failed to initialize the SDL2 library\n";
-  }
-
   SDL_Window* window = nullptr;
   SDL_Renderer* render = nullptr;
+  SDL_Surface* window_surface = nullptr;
 
-  SDL_CreateWindowAndRenderer(680, 480, SDL_WINDOW_RESIZABLE,
-  &window, &render);
+  SDLApp app{window, render};
+  app.prepareScene();
+  app.presentScene();
 
-  if (!window) {
-    std::cout << "Failed to create window\n";
-  }
-
-  SDL_Surface *window_surface = SDL_GetWindowSurface(window);
-  if (!window_surface) {
-    std::cout << "Failed to get the surface from the window \n";
-  }
-
-  SDL_UpdateWindowSurface(window);
-  SDL_Delay(5000);
-
-  SDLApp app = {window_surface, window};
-  Paddle left_paddle{PADDLE_TYPE::LEFT};
-  Paddle right_paddle{PADDLE_TYPE::RIGHT};
+  Paddle left_paddle{PADDLE_TYPE::LEFT, render};
+  Paddle right_paddle{PADDLE_TYPE::RIGHT, render};
+  app.InsertPaddle(&left_paddle);
+  app.InsertPaddle(&right_paddle);
 
   SDL_Event event;
   bool quit = false;
-
   while (!quit) {
     if (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_QUIT:
           quit = true;
+          break;
         default:
-          left_paddle.InputHandler(event);
-          right_paddle.InputHandler(event);
+          app.handleInput(event);
+          break;
       }      
     }
   }
+}
+
+void InitalizeWindowAndRenderer(SDL_Window* &window_ptr, SDL_Renderer* &render_ptr) {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    std::cout << "Failed to initialize the SDL2 library \n";
+  }
+
+  window_ptr = SDL_CreateWindow("Pong Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, 0);
+  if (!window_ptr) {
+    std::cout<<"Unable to create window \n";
+  }
+
+  render_ptr = SDL_CreateRenderer(window_ptr, -1, 0);
+  if (!render_ptr) {
+    std::cout<< "Unable to create renderer for window \n";
+  }
+}
+
+void PrepareScene(SDL_Renderer* &render) {
+  SDL_SetRenderDrawColor(render, 96, 128, 255, 255);
+	SDL_RenderClear(render);
+}
+
+void PresentScene(SDL_Renderer* &render) {
+  SDL_RenderPresent(render);
 }

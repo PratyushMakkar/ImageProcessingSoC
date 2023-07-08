@@ -1,10 +1,17 @@
 #include "paddle.h"
 
-float Paddle::getPosY() {
-  return this->pos_y;
+void Paddle::Draw() {
+  SDL_Renderer* render = this->render;
+  SDL_RenderClear(render);
+  SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
+  SDL_RenderDrawRect(render, &(this->paddle));
+  SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+  SDL_RenderFillRect(render, &(this->paddle));
+  SDL_RenderPresent(render);
 }
 
-Paddle::Paddle(PADDLE_TYPE m_type) {
+Paddle::Paddle(PADDLE_TYPE m_type, SDL_Renderer* render) {
+  this->render = render;
   this->type = m_type;
 
   switch (m_type) {
@@ -30,16 +37,6 @@ Paddle::Paddle(PADDLE_TYPE m_type) {
 Paddle::~Paddle() {}
 
 void Paddle::InputHandler(const SDL_Event &event) {
-  this->RenderPaddle();
-}
-
-void Paddle::RenderPaddle() {
-  SDL_Renderer* render = this->app->render_ptr;
-  SDL_RenderClear(render);
-  SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
-  SDL_RenderDrawRect(render, &(this->paddle));
-  SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
-  SDL_RenderFillRect(render, &(this->paddle));
-  SDL_RenderPresent(render);
+  this->Draw();
 }
 
