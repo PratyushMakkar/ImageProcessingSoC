@@ -1,5 +1,5 @@
 #include "drawable.h"
 
-std::vector<float> Drawable::GetPos() {
+std::pair<int, int> Drawable::GetPos() {
   return this->position;
 }

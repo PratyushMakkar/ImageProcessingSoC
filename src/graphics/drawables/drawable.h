@@ -1,7 +1,8 @@
 #ifndef __DRAWABLE_H__
 #define __DRAWABLE_H__
 
-#include <vector>
+
+#include <utility>
 #include "SDL2/SDL.h"
 
 extern int _SCREEN_WIDTH;
@@ -11,13 +12,14 @@ class Drawable {
   protected:
     SDL_Renderer* render;
     SDL_Rect paddle;
-    std::vector<float> position = {};
+    std::pair<int, int> position = {};
     
   public:
     Drawable() {};
     virtual ~Drawable() = default;
     virtual void Draw() {};
-    std::vector<float> GetPos();
+    virtual void handleInput(const SDL_Event &e) {};
+    std::pair<int, int> GetPos();
 };
 
 #endif

@@ -15,6 +15,8 @@ class PlayerScore : public Drawable {
     PlayerScore(SDL_Renderer* render);
     void UpdateScore(PADDLE_TYPE type);
     virtual void Draw() override;
+    virtual void handleInput(const SDL_Event &e) override;
+
   private:
     static TTF_Font* surface_font;
     std::pair<uint8_t, uint8_t> _score;

@@ -18,8 +18,8 @@ class Paddle : public Drawable {
     PADDLE_TYPE type;
     Paddle(PADDLE_TYPE type, SDL_Renderer* render);
     ~Paddle();
-    void InputHandler(const SDL_Event &event);
     virtual void Draw() override;
+    virtual void handleInput(const SDL_Event &e) override;
 };
 
 #endif

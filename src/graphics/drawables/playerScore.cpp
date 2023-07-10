@@ -17,6 +17,8 @@ void PlayerScore::UpdateScore(PADDLE_TYPE type) {
     case (PADDLE_TYPE::RIGHT):
       ++_score.second;
   }
+  //After updating the score, render the new score 
+  this->Draw();
 }
 
 void PlayerScore::Draw() {
@@ -53,4 +55,8 @@ void PlayerScore::Draw() {
   if (SDL_RenderCopy(this->render, texture, nullptr, &rect1) !=0 || SDL_RenderCopy(this->render, texture2, nullptr, &rect2) )  {
     std::cout<< SDL_GetError() <<std::endl;
   }
+}
+
+void PlayerScore::handleInput(const SDL_Event &e) {
+  this->UpdateScore(PADDLE_TYPE::RIGHT);
 }

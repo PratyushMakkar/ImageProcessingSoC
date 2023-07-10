@@ -4,6 +4,7 @@
 #include "defs.h"
 #include "drawables/paddle.h"
 #include "drawables/playerScore.h"
+#include "drawables/ball.h"
 
 int _SCREEN_WIDTH{700};
 int _SCREEN_HEIGHT{400};
@@ -22,15 +23,18 @@ int main(int agrc, char** argv) {
   app.InsertPaddle(&left_paddle);
   app.InsertPaddle(&right_paddle);
 
-  SDL_SetWindowSize(window, _SCREEN_WIDTH, _SCREEN_HEIGHT);
+  Ball ball{render};
+  PlayerScore PlayerScore{render};
 
+  SDL_SetWindowSize(window, _SCREEN_WIDTH, _SCREEN_HEIGHT);
   SDL_Event event;
   bool quit = false;
+  
   while (!quit) {
     if (SDL_PollEvent(&event)) {
       app.prepareScene();
-      PlayerScore PlayerScore{render};
-      PlayerScore.Draw();
+      PlayerScore.UpdateScore(PADDLE_TYPE::RIGHT);
+      ball.handleInput(event);
       switch (event.type) {
         case SDL_QUIT:
           quit = true;

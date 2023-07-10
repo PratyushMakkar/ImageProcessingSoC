@@ -8,7 +8,7 @@ SDLApp::SDLApp(SDL_Window* &window, SDL_Renderer* &render) {
   if (TTF_Init()) {
     std::cout << "Failed to initalize TTF font library" "\n";
   }
-  
+
   window = SDL_CreateWindow("Pong Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, 0);
   if (!window) {
     std::cout<<"Unable to create window \n";
@@ -18,6 +18,7 @@ SDLApp::SDLApp(SDL_Window* &window, SDL_Renderer* &render) {
   if (!render) {
     std::cout<< "Unable to create renderer for window \n";
   }
+
   this->render_ptr = &render;
   this->window_ptr = &window;
 }
@@ -49,6 +50,6 @@ Paddle* SDLApp::GetPaddle(PADDLE_TYPE m_type) {
 
 void SDLApp::handleInput(SDL_Event &e) {
   for (auto drawable: this->drawables) {
-    drawable->Draw();
+    drawable->handleInput(e);
   }
 }
