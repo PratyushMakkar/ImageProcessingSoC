@@ -5,6 +5,10 @@ SDLApp::SDLApp(SDL_Window* &window, SDL_Renderer* &render) {
     std::cout << "Failed to initialize the SDL2 library \n";
   }
 
+  if (TTF_Init()) {
+    std::cout << "Failed to initalize TTF font library" "\n";
+  }
+  
   window = SDL_CreateWindow("Pong Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, 0);
   if (!window) {
     std::cout<<"Unable to create window \n";

@@ -6,6 +6,7 @@
 #define INDEX(type) (type == PADDLE_TYPE::LEFT) ? 0 : 1;
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include <vector>
 #include "drawables/paddle.h"

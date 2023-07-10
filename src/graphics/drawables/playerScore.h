@@ -8,6 +8,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <utility>
 
+#define FONT_PATH "drawables/Arial.ttf"
 
 class PlayerScore : public Drawable {
   public:
@@ -16,7 +17,6 @@ class PlayerScore : public Drawable {
     virtual void Draw() override;
   private:
     static TTF_Font* surface_font;
-    static SDL_Surface* surface;
     std::pair<uint8_t, uint8_t> _score;
 };
 

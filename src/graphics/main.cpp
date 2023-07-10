@@ -23,13 +23,14 @@ int main(int agrc, char** argv) {
   app.InsertPaddle(&right_paddle);
 
   SDL_SetWindowSize(window, _SCREEN_WIDTH, _SCREEN_HEIGHT);
-  PlayerScore PlayerScore{render};
 
   SDL_Event event;
   bool quit = false;
   while (!quit) {
     if (SDL_PollEvent(&event)) {
       app.prepareScene();
+      PlayerScore PlayerScore{render};
+      PlayerScore.Draw();
       switch (event.type) {
         case SDL_QUIT:
           quit = true;
