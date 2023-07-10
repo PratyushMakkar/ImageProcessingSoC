@@ -3,6 +3,10 @@
 
 #include "defs.h"
 #include "drawables/paddle.h"
+#include "drawables/playerScore.h"
+
+int _SCREEN_WIDTH{700};
+int _SCREEN_HEIGHT{400};
 
 int main(int agrc, char** argv) {
   SDL_Window* window = nullptr;
@@ -18,10 +22,14 @@ int main(int agrc, char** argv) {
   app.InsertPaddle(&left_paddle);
   app.InsertPaddle(&right_paddle);
 
+  SDL_SetWindowSize(window, _SCREEN_WIDTH, _SCREEN_HEIGHT);
+  PlayerScore PlayerScore{render};
+
   SDL_Event event;
   bool quit = false;
   while (!quit) {
     if (SDL_PollEvent(&event)) {
+      app.prepareScene();
       switch (event.type) {
         case SDL_QUIT:
           quit = true;
@@ -29,9 +37,13 @@ int main(int agrc, char** argv) {
         default:
           app.handleInput(event);
           break;
-      }      
+      }
+      app.presentScene();      
     }
   }
+
+  SDL_Quit();
+  return 0;
 }
 
 void InitalizeWindowAndRenderer(SDL_Window* &window_ptr, SDL_Renderer* &render_ptr) {

@@ -9,8 +9,15 @@
 #include <iostream>
 #include <vector>
 #include "drawables/paddle.h"
+
+enum class GAME_STATE {
+  PLAYING,
+  RESUME
+};
+
 class SDLApp {
   private:
+    GAME_STATE _state;
     std::vector<Drawable*> drawables;
     SDL_Renderer** render_ptr;
     SDL_Window** window_ptr;

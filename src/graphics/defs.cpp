@@ -24,7 +24,7 @@ SDLApp::~SDLApp() {
 
 void SDLApp::prepareScene() {
   SDL_Renderer* render_ptr = *(this->render_ptr);
-  SDL_SetRenderDrawColor(render_ptr, 96, 128, 255, 255);
+  SDL_SetRenderDrawColor(render_ptr, 0x0, 0x0, 0x0, 0xFF);
 	SDL_RenderClear(render_ptr);
 }
 
@@ -44,5 +44,7 @@ Paddle* SDLApp::GetPaddle(PADDLE_TYPE m_type) {
 }
 
 void SDLApp::handleInput(SDL_Event &e) {
-
+  for (auto drawable: this->drawables) {
+    drawable->Draw();
+  }
 }

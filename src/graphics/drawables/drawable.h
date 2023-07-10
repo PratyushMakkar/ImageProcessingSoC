@@ -4,6 +4,9 @@
 #include <vector>
 #include "SDL2/SDL.h"
 
+extern int _SCREEN_WIDTH;
+extern int _SCREEN_HEIGHT;
+
 class Drawable {
   protected:
     SDL_Renderer* render;

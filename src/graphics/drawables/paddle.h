@@ -1,12 +1,13 @@
 #ifndef PADDLE_H
 #define PADDLE_H
 
-#define DELTA_SCREEN 50u
-#define PADDLE_WIDTH 40u
-#define PADDLE_HEIGHT 200u
+#define DELTA_SCREEN 50
+#define PADDLE_WIDTH 12
+#define SCREEN_PADDING 10
+#define PADDLE_HEIGHT 100
 
 #include "drawable.h"
- 
+
 enum class PADDLE_TYPE {
   LEFT,
   RIGHT
