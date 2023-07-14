@@ -17,11 +17,11 @@ class GameState_t {
     GameState_t DeserializeData(std::vector<uint8_t> data);
   private:
     bool IsResumed;
-    std::pair<int, int> dimensions;
-    std::pair<int, int> ballPosition;
-    std::pair<int, int> ballVelocity;
-    std::pair<int, int> leftPaddlePosition;
-    std::pair<int, int> rightPaddlePosition;
+    std::pair<uint16_t, uint16_t> dimensions;
+    std::pair<uint16_t, uint16_t> ballPosition;
+    std::pair<uint8_t, uint8_t> ballVelocity;
+    std::pair<uint16_t, uint16_t> leftPaddlePosition;
+    std::pair<uint16_t, uint16_t> rightPaddlePosition;
 };
 
 #endif

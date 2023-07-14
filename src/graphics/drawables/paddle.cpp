@@ -36,7 +36,7 @@ Paddle::Paddle(PADDLE_TYPE m_type, SDL_Renderer* render) {
 Paddle::~Paddle() {}
 
 void Paddle::handleInput(const SDL_Event &event) {
-  position.first -= _SCREEN_HEIGHT * 0.02;
+  //position.first -= _SCREEN_HEIGHT * 0.02;
   this->Draw();
 }
 
