@@ -14,10 +14,6 @@ module PingPong (
   output logic [15:0] ballVelocityOut
 );
 
-  logic [1:0] score_reg = 2'b0;
-  logic [31:0] ball_vel_reg;
-
-  assign ballVelocityOut = ball_vel_reg;
-  assign scoreOut = score_reg;
+  
   
 endmodule
