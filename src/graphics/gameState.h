@@ -10,18 +10,16 @@ enum class GAME_STATE {
   RESUME
 };
 
-class GameState_t {
-  public:
-    GameState_t();
-    std::vector<uint8_t> SerializeData();
-    GameState_t DeserializeData(std::vector<uint8_t> data);
-  private:
-    bool IsResumed;
-    std::pair<uint16_t, uint16_t> dimensions;
-    std::pair<uint16_t, uint16_t> ballPosition;
-    std::pair<uint8_t, uint8_t> ballVelocity;
-    std::pair<uint16_t, uint16_t> leftPaddlePosition;
-    std::pair<uint16_t, uint16_t> rightPaddlePosition;
-};
+typedef struct {
+  bool IsResumed;
+  std::pair<uint16_t, uint16_t> dimensions;
+  std::pair<uint16_t, uint16_t> ballPosition;
+  std::pair<uint16_t, uint16_t> ballVelocity;
+  std::pair<uint16_t, uint16_t> leftPaddlePosition;
+  std::pair<uint16_t, uint16_t> rightPaddlePosition;
+} GameState_t;
+
+char* SerializeData(GameState_t &state);
+GameState_t DeserializeData(std::vector<uint16_t> data);
 
 #endif

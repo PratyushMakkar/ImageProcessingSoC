@@ -19,7 +19,6 @@ module PaddleAlgorithm
   end 
 
   always_ff @(negedge rst) begin
-    eventDidHappen <= 1'b0;
     playerDidScore <= 2'b00;
   end
 
