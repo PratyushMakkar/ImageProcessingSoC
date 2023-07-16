@@ -60,8 +60,8 @@ module VGADriver (
   logic       sync_reg,
   logic       blank_reg,
 
-  logic [9:0] hsync_count_reg;
-  logic [9:0] vsync_count_reg;
+  logic [9:0] hsync_count_reg = 0;
+  logic [9:0] vsync_count_reg = 0;
 
   logic line_done = 1'b0;
   logic is_active;
@@ -188,8 +188,14 @@ module VGADriver (
   end
 
   always_comb begin : RGB_REGISTER_ASSIGNMENT
-    x_pixel_reg <= (hsync_state == HSYNC_STATE_ACTIVE) ? hsync_count_reg : RESET_COUNTER;
-    y_pixel_reg <= (vsync_state == VSYNC_STATE_ACTIVE) ? vsync_count_reg : RESET_COUNTER;
+    if (hsync_state == HSYNC_STATE_ACTIVE) begin
+      x_pixel_reg <= (hsync_count_reg == HSYNC_ACTIVE) ? RESET_COUNTER : (hsync_count_reg +1);
+    end else x_pixel_reg <= RESET_COUNTER;
+
+    if (vsync_state == VSYNC_STATE_ACTIVE) begin
+      x_pixel_reg <= (vsync_count_reg == VSYNC_ACTIVE) ? RESET_COUNTER : (vsync_count_reg +1);
+    end else y_pixel_reg <= RESET_COUNTER;
+      
     red_reg <= is_active ? colour_in[23:16] : 8'h00;
     blue_reg <= is_active ? colour_in[15:8] : 8'h00;
     green_reg <= is_active ? colour_in[7:0] : 8'h00;
