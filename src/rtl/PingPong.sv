@@ -23,6 +23,7 @@ module PingPong (
     .clk(clk),
     .rst(rst),
     .ballPosition(ballPosition),
+    .dimensions(dimensions),
     .ballVelocity(ballVelocity),
     .paddlePositionIn(leftPaddlePosition),
     .paddlePositionOut(leftPaddlePosition),
