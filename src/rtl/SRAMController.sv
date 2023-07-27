@@ -12,16 +12,18 @@ module SRAMController (
   output logic ce_n, oe_n, we_n, lb_n, ub_n
 );
 
-  parameter MAX_DATA_ACCESS_AWAIT = 11  //12 ns wait period until data valid
-  parameter MAX_DATA_INVALID_AWAIT = 11 
+  parameter MAX_DATA_ACCESS_AWAIT = 11; //12 ns wait period until data valid
+  parameter MAX_DATA_INVALID_AWAIT = 11;
 
   localparam logic HIGH = 1'b1;
   localparam logic LOW = 1'b0;
 
   localparam logic [4:0] CONTROL_HIGH = 5'b11111;
   localparam logic [4:0] CONTROL_LOW = 5'b00000;
+  localparam logic [15:0] HIGH_IMPEDENCE_DATA = 16'hzzzz;
 
-  logic [7:0] read_addr_reg; 
+  logic [17:0] read_addr_reg; 
+  logic [15:0] dq_bus_reg;
   logic ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg;
   logic read_busy_reg, wr_busy_reg, read_valid_reg;
 
@@ -36,13 +38,13 @@ module SRAMController (
 
   SRAM_STATE_t current_state = IDLE;
   SRAM_STATE_t next_state; 
-
+	
   // Register the address to hold it out if next state is read_await
   always_ff @(posedge clk) begin
     if (rst == HIGH) begin
       current_state <= READ_BUSY_INVALID;
-    end else begin
-      read_addr_reg <= (read_en == HIGH) ? dq: read_addr_reg;
+    end else begin 
+      if (next_state == READ_BUSY_VALID) dq_bus_reg <= dq;
       current_state <= next_state;
     end
   end
@@ -53,7 +55,9 @@ module SRAMController (
     else clock_await_cnt <= 0;
   end
 
+  //TODO set the value on dq
   always_comb begin
+    read_addr_reg <= ((current_state == READ_BUSY_VALID) || (current_state == READ_AWAIT)) ? address_inputs : HIGH_IMPEDENCE_DATA;
     unique case (current_state)
       IDLE: begin
         next_state <= (read_en == HIGH) ? READ_AWAIT : IDLE;
@@ -81,5 +85,11 @@ module SRAMController (
       end
     endcase
   end
+  
+  
+  assign dq = (current_state == READ_BUSY_VALID) ? dq_bus_reg : HIGH_IMPEDENCE_DATA;
+  assign {ce_n, oe_n, we_n, lb_n, ub_n} = {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg};
+  assign address_out = read_addr_reg;
+  assign {read_busy, wr_busy, read_valid} = {read_busy_reg, wr_busy_reg, read_valid_reg};
 
 endmodule
