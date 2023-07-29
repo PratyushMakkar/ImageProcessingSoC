@@ -68,10 +68,10 @@ module SRAMController (
       wr_clock_await_cnt <= 0;
     end
 
-    if ((current_state == READ_AWAIT) || (current_state == READ_BUSY_INVALID)) clock_await_cnt <= clock_await_cnt +1;
+    if ((next_state == READ_AWAIT) || (next_state == READ_BUSY_INVALID)) clock_await_cnt <= clock_await_cnt +1;
     else clock_await_cnt <= 0;
 
-    if ((current_state == WRITE_SETUP) || (current_state == WRITE_TEARDOWN) || (current_state == WRITE_AWAIT)) wr_clock_await_cnt <= wr_clock_await_cnt + 1;
+    if ((next_state == WRITE_SETUP) || (next_state == WRITE_TEARDOWN) || (next_state == WRITE_AWAIT)) wr_clock_await_cnt <= wr_clock_await_cnt + 1;
     else wr_clock_await_cnt <= 0;
   end
 
