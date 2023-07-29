@@ -44,7 +44,7 @@ module SRAMController (
     WRITE_SETUP, 
     WRITE_AWAIT,  
     WRITE_BUSY_VALID,
-    WRITE_TEARDOWN,
+    WRITE_TEARDOWN
   } SRAM_STATE_t;
 
   SRAM_STATE_t current_state = IDLE;
@@ -56,8 +56,8 @@ module SRAMController (
       current_state <= READ_BUSY_INVALID;
     end else begin 
       if (next_state == READ_BUSY_VALID) dq_bus_reg <= dq;
-      if ((next_state == WRITE_BUSY_VALID) && (current_state != WRITE_BUSY_VALID)) dq_bus_reg <= dq;      // The data is latched once it enters write mode
-      if ((next_state == READ_AWAIT) || (next_state == WRITE_SETUP)) addr_in_reg <= addr;
+      if ((next_state == WRITE_SETUP) && (current_state == IDLE)) dq_bus_reg <= dq;      // The data is latched once it enters write mode
+      if ((next_state == READ_AWAIT) || (next_state == WRITE_SETUP)) addr_in_reg <= address_inputs;
       current_state <= next_state;
     end
   end
@@ -83,7 +83,8 @@ module SRAMController (
       || (current_state == WRITE_AWAIT)
       || (current_state == WRITE_SETUP)
       || (current_state == WRITE_AWAIT)
-      || (current_state == WRITE_BUSY_VALID)) ? addr_in_reg : HIGH_IMPEDENCE_DATA;
+      || (current_state == WRITE_BUSY_VALID)
+      || (current_state == WRITE_TEARDOWN)) ? addr_in_reg : HIGH_IMPEDENCE_DATA;
 
     read_valid_reg <= (current_state == READ_BUSY_VALID) ? HIGH : LOW;
     wr_valid_reg <= (current_state == WRITE_BUSY_VALID) ? HIGH : LOW;
@@ -91,8 +92,8 @@ module SRAMController (
     unique case (current_state)
       // Read logic SRAM. Read is given preference above write.
       IDLE: begin
-        next_state <= (wr_en == HIGH) ? ((read_en == HIGH) ? READ_AWAIT : WRITE_AWAIT) : IDLE;
-        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_HIGH;
+        next_state <= (wr_en == HIGH || read_en == HIGH) ? ((read_en == HIGH) ? READ_AWAIT : WRITE_SETUP) : IDLE;
+        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_IDLE;
         {read_busy_reg, wr_busy_reg} <= 2'b00;
       end
       READ_AWAIT: begin
@@ -107,14 +108,14 @@ module SRAMController (
       end
       READ_BUSY_INVALID: begin
         next_state <= (clock_await_cnt == MAX_DATA_INVALID_AWAIT) ? IDLE : READ_BUSY_INVALID;
-        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_HIGH;
+        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_IDLE;
         {read_busy_reg, wr_busy_reg} <= 2'b10;
       end
 
       //Write logic for SRAM
       WRITE_SETUP: begin
         next_state <= (wr_clock_await_cnt == WR_MIN_SETUP_TIME) ? WRITE_AWAIT: WRITE_SETUP;
-        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_HIGH;
+        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_IDLE;
         {read_busy_reg, wr_busy_reg} <= 2'b01;
       end
       WRITE_AWAIT: begin
@@ -123,13 +124,13 @@ module SRAMController (
         {read_busy_reg, wr_busy_reg} <= 2'b01;
       end
       WRITE_BUSY_VALID: begin
-        next_state <= (wr_en == HIGH) ? WRITE_TEARDOWN : WRITE_BUSY_VALID;
+        next_state <= (wr_en == HIGH) ? WRITE_BUSY_VALID : WRITE_TEARDOWN;
         {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_WRITE;
         {read_busy_reg, wr_busy_reg} <= 2'b01;
       end
       WRITE_TEARDOWN: begin
-        next_state <= (wr_clock_await_cnt == WR_DATA_INVALID_AWAIT) ? IDLE : WRITE_TEARDOWN;
-        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_HIGH;
+        next_state <= (wr_clock_await_cnt == WR_DATA_DISABLE_AWAIT) ? IDLE : WRITE_TEARDOWN;
+        {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg} <= CONTROL_WRITE;
         {read_busy_reg, wr_busy_reg} <= 2'b01;
       end
     endcase
@@ -138,5 +139,5 @@ module SRAMController (
   assign dq = ((current_state == READ_BUSY_VALID) || (current_state == WRITE_BUSY_VALID)) ? dq_bus_reg : HIGH_IMPEDENCE_DATA;
   assign {ce_n, oe_n, we_n, lb_n, ub_n} = {ce_n_reg, oe_n_reg, we_n_reg, lb_n_reg, ub_n_reg};
   assign address_out = read_addr_reg;
-  assign {read_busy, wr_busy, read_valid} = {read_busy_reg, wr_busy_reg, read_valid_reg};
+  assign {read_busy, wr_busy, read_valid, wr_valid} = {read_busy_reg, wr_busy_reg, read_valid_reg, wr_valid_reg};
 endmodule
