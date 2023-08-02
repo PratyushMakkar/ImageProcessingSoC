@@ -71,10 +71,6 @@ module SRAMController (
     else clock_await_cnt <= 0;
   end
 
-  always_ff @(posedge clk) begin
-    read_valid_latch <= read_valid_reg;
-  end
-
   always_comb begin
     command_reg <= (read_en == HIGH) ? CONTROL_READ : (wr_en == HIGH ? CONTROL_WRITE : CONTROL_IDLE);
     dq_rd_reg <= ((current_state == READ_BUSY_VALID) && (clk == LOW)) ? dq : HIGH_IMPEDENCE_DATA;
@@ -89,9 +85,9 @@ module SRAMController (
         {read_valid_reg, wr_valid_reg, wr_busy_reg, read_busy_reg} <= {LOW, LOW, LOW, HIGH};
       end
       READ_BUSY_VALID: begin
-        read_valid_reg <= (read_valid_latch == HIGH) ? HIGH : ((clk == LOW) ? HIGH : LOW);
+        read_valid_reg <= (clk == LOW) ? HIGH : LOW;
         {wr_valid_reg, wr_busy_reg, read_busy_reg} <= {LOW, LOW, HIGH};
-        next_state <= (read_en == HIGH) ? READ_BUSY_VALID: ((MAX_DATA_INVALID_AWAIT == 0) ? IDLE: READ_BUSY_INVALID);
+        next_state <= (MAX_DATA_INVALID_AWAIT == 0) ? IDLE: READ_BUSY_INVALID;
       end
       READ_BUSY_INVALID: begin
         next_state <= (clock_await_cnt == MAX_DATA_INVALID_AWAIT) ? IDLE : READ_BUSY_INVALID;
@@ -104,7 +100,7 @@ module SRAMController (
   assign {ce_n, oe_n, we_n, lb_n, ub_n} = command_reg;
   assign dq_sram = HIGH_IMPEDENCE_DATA;  // The dq bus is driven to only when the ready is ready. 
 
-  assign read_data = (read_valid_reg == HIGH) ? dq_rd_reg : HIGH_IMPEDENCE_DATA;
+  assign read_data = (read_valid_reg == HIGH) ? dq_rd_reg : HIGH_IMPEDENCE_DATA;      // Avalon bus signals
   assign {read_busy, write_busy, read_valid, wr_valid} = {read_busy_reg, wr_busy_reg, read_valid_reg, wr_valid_reg};
   
 endmodule
