@@ -37,7 +37,7 @@ module SRAMController (
   logic [15:0] dq_rd_reg;
 
   logic [4:0] command_reg;
-  logic read_busy_reg, wr_busy_reg, read_valid_reg, wr_valid_reg;
+  logic read_busy_reg, wr_busy_reg, read_valid_reg, wr_valid_reg, read_valid_latch;
 
   logic [7:0] clock_await_cnt = 8'h00;       // Not assigned in comb block. 
   logic [7:0] wr_clock_await_cnt = 8'h00;
@@ -71,10 +71,13 @@ module SRAMController (
     else clock_await_cnt <= 0;
   end
 
+  always_ff @(posedge clk) begin
+    read_valid_latch <= read_valid_reg;
+  end
+
   always_comb begin
-    read_valid_reg <= ((read_en == HIGH) && (current_state == READ_BUSY_VALID) && (clk == LOW));
     command_reg <= (read_en == HIGH) ? CONTROL_READ : (wr_en == HIGH ? CONTROL_WRITE : CONTROL_IDLE);
-    dq_rd_reg <= ( (current_state == READ_BUSY_VALID) && (clk == LOW)) ? dq : HIGH_IMPEDENCE_DATA;
+    dq_rd_reg <= ((current_state == READ_BUSY_VALID) && (clk == LOW)) ? dq : HIGH_IMPEDENCE_DATA;
   
     unique case (current_state)
       IDLE: begin
@@ -86,7 +89,7 @@ module SRAMController (
         {read_valid_reg, wr_valid_reg, wr_busy_reg, read_busy_reg} <= {LOW, LOW, LOW, HIGH};
       end
       READ_BUSY_VALID: begin
-        read_valid_reg <= (read_valid_reg == HIGH) ? HIGH : ((clk == LOW) ? HIGH : LOW);
+        read_valid_reg <= (read_valid_latch == HIGH) ? HIGH : ((clk == LOW) ? HIGH : LOW);
         {wr_valid_reg, wr_busy_reg, read_busy_reg} <= {LOW, LOW, HIGH};
         next_state <= (read_en == HIGH) ? READ_BUSY_VALID: ((MAX_DATA_INVALID_AWAIT == 0) ? IDLE: READ_BUSY_INVALID);
       end
