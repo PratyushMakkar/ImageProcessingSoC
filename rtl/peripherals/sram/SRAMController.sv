@@ -4,12 +4,12 @@ module SRAMController (
   input logic rst,
   input logic read_en, wr_en, 
   input logic [17:0] address,
-  input logic wr_data,
+  input logic [15:0] wr_data,
   output logic read_valid, wr_valid,
   output logic read_busy, wr_busy,
-  output logic read_data,
+  output logic [15:0] read_data,
 
-  inout logic dq_sram,             // Signals intended for SRAM
+  inout logic [15:0] dq_sram,             // Signals intended for SRAM
   output logic [17:0] address_sram,
   output logic ce_n_sram, oe_n_sram, we_n_sram, lb_n_sram, ub_n_sram
 );
@@ -28,7 +28,6 @@ module SRAMController (
   localparam logic [4:0] CONTROL_READ  = 5'b00100;
   localparam logic [4:0] CONTROL_WRITE = 5'b01000;
   localparam logic [15:0] HIGH_IMPEDENCE_DATA = 16'hzzzz;
-
 
   // Local registers
   logic [17:0] addr_reg; 
