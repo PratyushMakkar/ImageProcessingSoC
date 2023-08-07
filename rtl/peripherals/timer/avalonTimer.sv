@@ -12,8 +12,8 @@ module AvalonTimer (
 
   parameter logic [1:0] TIM1_OFFSET = 2b'00;
   parameter logic [1:0] TIM2_OFFSET = 2b'01;
-  parameter logic [1:0] TIM1_OFFSET = 2b'10;
-  parameter logic [1:0] TIM1_OFFSET = 2b'11;
+  parameter logic [1:0] TIM3_OFFSET = 2b'10;
+  parameter logic [1:0] TIM4_OFFSET = 2b'11;
 
   logic [3:0] rst_reg = 4'd0;
   logic [3:0] rd_en_reg, wr_en_reg; 
@@ -32,13 +32,13 @@ module AvalonTimer (
     = {(((address_offset == TIM1_OFFSET) && (read_n == 1'b0)) ? 1'b1 : 1'b0),
       (((address_offset == TIM2_OFFSET) && (read_n == 1'b0)) ? 1'b1 : 1'b0),
       (((address_offset == TIM3_OFFSET) && (read_n == 1'b0)) ? 1'b1 : 1'b0),
-      (((address_offset == TIM3_OFFSET) && (read_n == 1'b0)) ? 1'b1 : 1'b0)}
+      (((address_offset == TIM4_OFFSET) && (read_n == 1'b0)) ? 1'b1 : 1'b0)}
 
   assign {wr_en_reg[3], wr_en_reg[2], wr_en_reg[1], wr_en_reg[0]}
       = {(((address_offset == TIM1_OFFSET) && (write_n == 1'b0)) ? 1'b1 : 1'b0),
         (((address_offset == TIM2_OFFSET) && (write_n == 1'b0)) ? 1'b1 : 1'b0),
         (((address_offset == TIM3_OFFSET) && (write_n == 1'b0)) ? 1'b1 : 1'b0),
-        (((address_offset == TIM3_OFFSET) && (write_n == 1'b0)) ? 1'b1 : 1'b0)}
+        (((address_offset == TIM4_OFFSET) && (write_n == 1'b0)) ? 1'b1 : 1'b0)}
 
   Timer TIM1 (
     .clk(clk),
