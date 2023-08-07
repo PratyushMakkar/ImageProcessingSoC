@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define TIM_BASE_ADDRESS ((uint32_t) 0xFFFFFFF)
+#define TIM_BASE_ADDRESS ((uint32_t) 0xA0000000)
 
 #define PRESCALER_0  ((uint32_t) 0x00)
 #define PRESCALER_1  ((uint32_t) 0x01 << 0U)
