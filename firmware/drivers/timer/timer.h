@@ -14,26 +14,41 @@
 #define PRESCALER_16 ((uint32_t) 0x01 << 15U)
 #define PRESCALER_32 ((uint32_t) 0x01 << 31U)
 
-#define TIM_CFG ((volatile timer_config_t*) (TIM_BASE_ADDRESS))
+#define TIM1 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x00 << 4U)))
+#define TIM2 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x01 << 4U)))
+#define TIM3 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x02 << 4U)))
+#define TIM4 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x03 << 4U)))
 
-#define TIM1 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x01 << 5U)))
-#define TIM2 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x02 << 5U)))
-#define TIM3 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x03 << 5U)))
-#define TIM4 ((volatile timer_t*) (TIM_BASE_ADDRESS + (0x04 << 5U)))
+#define TIM_CFG_DEFAULT = 0x0010U
+
+typedef enum {
+  ENABLE_COUNTER      = (0x0001U << 0U),
+  ENABLE_INTERRUPT    = (0x0001U << 1U),
+  AUTOMATIC_RESET     = (0x0001U << 2U),
+  REINITALIZE_COUNTER = (0x0001U << 3U),
+  CLEAR_TIMER         = (0x0001U << 4U),
+  TIMER_DID_EXPIRE    = (0x0001U << 5U)
+} config_mask_t;
 
 typedef struct {
-  uint8_t configRegister;     // 0x00
-  uint32_t timerCnt;          // 0x04  The timer value for the timer
-  uint32_t compareRegister;   // 0x08  The upper bound for the counter
-  uint32_t prescaler;         // 0x0C  The prescaler value
-  uint32_t flagRegister;      // 0x10  Flag register for the counter.
+  uint16_t config;    // 0x00  Configuration and flags for the timer instance. 
+  uint32_t timerCnt;  // 0x04  The timer value for the timer
+  uint32_t compare;   // 0x08  The upper bound for the counter
+  uint32_t prescaler; // 0x0C  The prescaler value
 } timer_t;
+
+error_codes_t initalizeTimer(timer_t* timer);
 
 error_codes_t getTimerCount(const timer_t* timer, uint32_t* time);
 error_codes_t getPrescalerValue(const timer_t* timer, uint32_t* prescaler);
 error_codes_t getCompareValue(const timer_t* timer, uint32_t* cmp);
+error_codes_t timerDidExpire(const timer_t* timer, bool* returnBool);
+
+error_codes_t enableTimerConfig(timer_t* timer, config_mask_t mask);
+error_codes_t disableTimerConfig(timer_t* timer, config_mask_t mask);
 
 error_codes_t setPrescalerValue(timer_t* timer, uint32_t prescaler);
 error_codes_t setComapreValue(timer_t* timer, uint32_t cmp);
+error_codes_t clearTimer(timer_t* timer);
 
 #endif
