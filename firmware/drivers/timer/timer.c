@@ -12,7 +12,6 @@ error_codes_t timerDidExpire(const timer_t* timer, bool* returnBool) {
 
 error_codes_t clearTimer(timer_t* timer) {
   if (!isValidTimer(timer)) return TIM_INVALID_INSTANCE;
-
   error_codes_t errCode;
   RETURN_IF_ERROR_CODE(enableTimerConfig(timer, CLEAR_TIMER));
   return ERR_CODE_SUCCESS;
