@@ -1,6 +1,7 @@
 `include "SRAMController.sv"
 `include "syncFifo.sv"
 module AvalonSRAM (
+  input logic rst,
   input logic clk,
   input logic read_n,       
   input logic write_n,
@@ -18,10 +19,8 @@ module AvalonSRAM (
 );
 
   typedef enum logic [2:0] {
-    IDLE,
-    BEGIN_ADDRESS,
-    PIPELINED_TRANSFER,
-    END_TRANSMIT
+    SRAM_IDLE,
+    SRAM_BUSY
   } pipelined_state_t;
 
   pipelined_state_t currState = IDLE;
@@ -30,10 +29,11 @@ module AvalonSRAM (
   /*--------- RX FIFO signals------*/
   logic [17:0] addressDataIn, addressDataOut;
   logic [1:0] byteEnableIn, byteEnableOut;
+  logic [15:0] writeDataIn, writeDataOut;
   logic readEn, writeEn;
-  logic isEmptyAddressRX, isEmptyByteEnableRX;
-  logic isFullAddressRX, isFullByteEnableRX;
-
+  logic isEmptyAddressRX, isEmptyByteEnableRX, isFullDataRX;
+  logic isFullAddressRX, isFullByteEnableRX,  isFullDataRX;
+ 
   logic writeEnableRX:
   logic readEnableRX;
 
@@ -43,6 +43,8 @@ module AvalonSRAM (
 
   logic writeEnableTX:
   logic readEnableTX;
+
+  assign dataInTX = readDataReg;
 
   /* ------------ SRAM Controller signals---------- */
   logic readEnableSRAM, writeEnableSRAM;
@@ -71,12 +73,23 @@ module AvalonSRAM (
     .readEn(readEnableRX)
   );
 
+  SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(16)) WriteDataFIFO (
+    .clk(clk),
+    .rst(rst),
+    .dataIn(writeDataIn),
+    .dataOut(writeDataIn),
+    .isEmpty(isEmptyDataTX),
+    .isFull(isFullDataRX),
+    .writeEn(writeEnableRX),
+    .readEn(readEnableRX)
+  );
+
   SRAMController Controller (
     .clk(clk),
     .read_en(readEnableSRAM),
     .wr_en(writeEnableSRAM),
     .address(addressDataOut),
-    .wr_data(writeData),
+    .wr_data(writeDataOut),
     .read_data(readDataReg),
     .byteEnable_n(byteEnableOut),
     .dq_sram(dq_sram),
@@ -115,7 +128,6 @@ module AvalonSRAM (
     end
   end
 
-  // TODO handle case where TX buffer is full.
   always_comb begin : TX_FIFO_INTERFACE
     if (!isEmptyDataTX) begin
       readdatavalid = 1'b1;
@@ -129,7 +141,33 @@ module AvalonSRAM (
   end
 
   always_comb begin : SRAM_INTERFACE
+    unique case (currState)
+      SRAM_IDLE:
+        {readEnableSRAM, writeEnableSRAM} = {1'b0, 1'b0};
+        writeEnableTX = 1'b0;
+        if (!isEmptyAddressRX && !isFullDataTX) begin
+          nextState = SRAM_BUSY;
+          readEnableRX = 1'b1;
+        end else begin
+          nextState = SRAM_IDLE;
+          readEnableRX = 1'b0;
+        end
 
+      SRAM_BUSY:
+        writeEnableTX = ~read_n;  // We only write to transmit buffer if we are reading.
+        {readEnableSRAM, writeEnableSRAM} = {~read_n, ~write_n};
+        if (!isEmptyAddressRX && !isFullDataTX) begin
+          nextState = SRAM_BUSY;
+          readEnableRX = 1'b1;
+        end else begin
+          nextState = SRAM_IDLE;
+          readEnableRX = 1'b0;
+        end
+    endcase
+  end
+
+  always_ff @(posedge clk) begin
+    currState <= nextState;
   end
 
 endmodule
