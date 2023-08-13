@@ -126,27 +126,27 @@ module VGADriver (
   always_comb begin : HORIZONTEL_SYNC_LOGIC_BLOCK
     unique case (hsync_state) 
       HSYNC_STATE_ACTIVE: begin
-        line_done <= LOW:
-        hsync_nextState <= (hsync_count_reg == HSYNC_ACTIVE) ? HSYNC_STATE_FRONT_PORCH : HSYNC_STATE_ACTIVE;
-        hsync_reg <= HIGH;
+        line_done = LOW:
+        hsync_nextState = (hsync_count_reg == HSYNC_ACTIVE) ? HSYNC_STATE_FRONT_PORCH : HSYNC_STATE_ACTIVE;
+        hsync_reg = HIGH;
       end
 
       HSYNC_STATE_FRONT_PORCH: begin
-        line_done <= LOW:
-        hsync_nextState <= (hsync_count_reg == HSYNC_FRONT_PORCH) ? HSYNC_STATE_SYNC_SIGN : HSYNC_STATE_FRONT_PORCH;
-        hsync_reg <= HIGH;
+        line_done = LOW:
+        hsync_nextState = (hsync_count_reg == HSYNC_FRONT_PORCH) ? HSYNC_STATE_SYNC_SIGN : HSYNC_STATE_FRONT_PORCH;
+        hsync_reg = HIGH;
       end
 
       HSYNC_STATE_SYNC_SIGN: begin
-        line_done <= LOW:
-        hsync_nextState <= (hsync_count_reg == HSYNC_STATE_SYNC_SIGN) ? HSYNC_STATE_BACK_PORCH : HSYNC_STATE_SYNC_SIGN;
-        hsync_reg <= LOW;
+        line_done = LOW:
+        hsync_nextState = (hsync_count_reg == HSYNC_STATE_SYNC_SIGN) ? HSYNC_STATE_BACK_PORCH : HSYNC_STATE_SYNC_SIGN;
+        hsync_reg = LOW;
       end
 
       HSYNC_STATE_BACK_PORCH: begin
-        line_done <= (hsync_count_reg == HSYNC_BACK_PORCH) ? HIGH : LOW;
-        hsync_nextState <= (hsync_count_reg == HSYNC_BACK_PORCH) ? HSYNC_STATE_ACTIVE : HSYNC_STATE_BACK_PORCH;
-        hsync_reg <= HIGH;
+        line_done = (hsync_count_reg == HSYNC_BACK_PORCH) ? HIGH : LOW;
+        hsync_nextState = (hsync_count_reg == HSYNC_BACK_PORCH) ? HSYNC_STATE_ACTIVE : HSYNC_STATE_BACK_PORCH;
+        hsync_reg = HIGH;
       end
     endcase
   end
@@ -154,53 +154,53 @@ module VGADriver (
   always_comb begin : VERTICAL_SYNC_LOGIC_BLOCK
     unique case (vsync_state) 
       VSYNC_STATE_ACTIVE: begin
-        vsync_reg <= HIGH;
+        vsync_reg = HIGH;
         if (line_done == HIGH) begin
-          vsync_nextState <= (vsync_count_reg == VSYNC_ACTIVE) ? VSYNC_STATE_FRONT_PORCH : VYSNC_STATE_ACTIVE;
+          vsync_nextState = (vsync_count_reg == VSYNC_ACTIVE) ? VSYNC_STATE_FRONT_PORCH : VYSNC_STATE_ACTIVE;
         end else 
-          vsync_nextState <= VSYNC_STATE_ACTIVE
+          vsync_nextState = VSYNC_STATE_ACTIVE
       end
 
       VSYNC_STATE_FRONT_PORCH: begin
-        vsync_reg <= HIGH;
+        vsync_reg = HIGH;
         if (line_done == HIGH) begin
-          vsync_nextState <= (vsync_count_reg == VSYNC_FRONT_PORCH) ? VSYNC_STATE_SYNC_SIGN : VSYNC_STATE_FRONT_PORCH;
+          vsync_nextState = (vsync_count_reg == VSYNC_FRONT_PORCH) ? VSYNC_STATE_SYNC_SIGN : VSYNC_STATE_FRONT_PORCH;
         end else 
-          vsync_nextState <= VSYNC_STATE_FRONT_PORCH;
+          vsync_nextState = VSYNC_STATE_FRONT_PORCH;
       end
 
       VSYNC_STATE_SYNC_SIGN: begin
-        vscync_reg <= LOW;
+        vscync_reg = LOW;
         if (line_done == HIGH) begin
-          vsync_nextState <= (vsync_count_reg == VSYNC_STATE_SYNC_SIGN) ? VSYNC_STATE_BACK_PORCH : VSYNC_STATE_SYNC_SIGN;
+          vsync_nextState = (vsync_count_reg == VSYNC_STATE_SYNC_SIGN) ? VSYNC_STATE_BACK_PORCH : VSYNC_STATE_SYNC_SIGN;
         end else
-          vsync_nextState <= VSYNC_STATE_SYNC_SIGN;
+          vsync_nextState = VSYNC_STATE_SYNC_SIGN;
       end
 
       VSYNC_STATE_BACK_PORCH: begin
-        vsync_reg <= HIGH;
+        vsync_reg = HIGH;
         if (line_done == HIGH) begin
-          vsync_nextState <= (vsync_count_reg == VSYNC_STATE_SYNC_SIGN) ? VSYNC_STATE_ACTIVE : VSYNC_STATE_BACK_PORCH;
+          vsync_nextState = (vsync_count_reg == VSYNC_STATE_SYNC_SIGN) ? VSYNC_STATE_ACTIVE : VSYNC_STATE_BACK_PORCH;
         end else 
-          vsync_nextState <= VSYNC_STATE_BACK_PORCH;
+          vsync_nextState = VSYNC_STATE_BACK_PORCH;
       end
     endcase
   end
 
   always_comb begin : RGB_REGISTER_ASSIGNMENT
     if (hsync_state == HSYNC_STATE_ACTIVE) begin
-      x_pixel_reg <= (hsync_count_reg == HSYNC_ACTIVE) ? RESET_COUNTER : (hsync_count_reg +1);
-    end else x_pixel_reg <= RESET_COUNTER;
+      x_pixel_reg = (hsync_count_reg == HSYNC_ACTIVE) ? RESET_COUNTER : (hsync_count_reg +1);
+    end else x_pixel_reg = RESET_COUNTER;
 
     if (vsync_state == VSYNC_STATE_ACTIVE) begin
-      x_pixel_reg <= (vsync_count_reg == VSYNC_ACTIVE) ? RESET_COUNTER : (vsync_count_reg +1);
-    end else y_pixel_reg <= RESET_COUNTER;
+      x_pixel_reg = (vsync_count_reg == VSYNC_ACTIVE) ? RESET_COUNTER : (vsync_count_reg +1);
+    end else y_pixel_reg = RESET_COUNTER;
       
-    red_reg <= is_active ? colour_in[23:16] : 8'h00;
-    blue_reg <= is_active ? colour_in[15:8] : 8'h00;
-    green_reg <= is_active ? colour_in[7:0] : 8'h00;
-    blank_reg <= hsync_reg & vsync_reg;
-    sync_reg <= 1'b1;
+    red_reg = is_active ? colour_in[23:16] : 8'h00;
+    blue_reg = is_active ? colour_in[15:8] : 8'h00;
+    green_reg = is_active ? colour_in[7:0] : 8'h00;
+    blank_reg = hsync_reg & vsync_reg;
+    sync_reg = 1'b1;
   end
 
   assign clkOut = clk;

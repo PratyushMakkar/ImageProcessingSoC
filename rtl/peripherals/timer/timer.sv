@@ -91,10 +91,10 @@ module Timer (
   always_comb begin : READ_INTERFACE
     if (rd_en == 1'b1) begin
       unique case (address)
-        CONTROL_ADDRESS: read_data <= tim_control_reg;
-        TIM_CNT_ADDRESS: read_data <= tim_cnt_reg;
-        COMPARE_ADDRESS: read_data <= tim_cmp_reg;
-        PRESCALER_ADDRESS: read_data <= tim_prescaler_reg;
+        CONTROL_ADDRESS: read_data = tim_control_reg;
+        TIM_CNT_ADDRESS: read_data = tim_cnt_reg;
+        COMPARE_ADDRESS: read_data = tim_cmp_reg;
+        PRESCALER_ADDRESS: read_data = tim_prescaler_reg;
       endcase
     end else read_data <= 32'dz;
   end
