@@ -4,6 +4,7 @@ module SyncFifo (
   input logic [FIFO_WIDTH-1:0] dataIn,
   input logic readEn,
   input logic writeEn,
+  output logic isEmpty,
   output logic isFull,
   output logic [FIFO_WIDTH-1:0] dataOut,
 );
@@ -12,10 +13,9 @@ module SyncFifo (
   parameter FIFO_WIDTH = 17;
 
   logic dataOutReg;
-  
   logic isFullReg; 
   logic isEmptyReg; 
-  
+
   assign isFullReg = ((readPtr == writePtr[MAX_DEPTH-1:0]) && (writePtr[MAX_DEPTH] == 1'b1)) ? 1'b1 : 1'b0;
   assign isEmptyReg = (readPtr == writePtr[MAX_DEPTH-1:0] && (writePtr[MAX_DEPTH] == 1'b0)) ? 1'b1 : 1'b0;
   
@@ -44,5 +44,6 @@ module SyncFifo (
   end
 
   assign isFull = isFullReg;
+  assign isEmpty = isEmptyReg;
   assign dataOut = dataOutReg;
 endmodule
