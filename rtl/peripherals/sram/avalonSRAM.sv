@@ -4,34 +4,52 @@ module AvalonSRAM (
   input logic read_n,       
   input logic write_n,
   input logic chipselect,
-  input logic beginTransfer,
   input logic [31:0] address,
-  output logic [15:0] readData,
-  input logic [15:0] writeData,
+  output logic [31:0] readData,
+  input logic [31:0] writeData,
   input logic [3:0] byteEnable_n,
   output logic waitrequest,
-  output logic readyfordata,
-  output logic irq,
-
+ 
   inout logic [15:0] dq_sram,             // Signals intended for SRAM
   output logic [17:0] address_sram,
   output logic ce_n_sram, oe_n_sram, we_n_sram, lb_n_sram, ub_n_sram
 );
 
-  logic [31:0] address_reg;
-  logic [3:0] byteEnable_reg_n;
-  logic read_n_reg, chipselect_reg;
+  //-----------------------------------Start of Avalon MM bus signals-----------------------//
+  logic read_n_avalon_reg, write_n_avalon_reg;
+  logic [31:0] address_n_avalon_reg;
+  logic [31:0] readData_avalon_reg;
+  logic [31:0] writeData_avalon_reg;
+  logic [3:0] byteEnable_n_avalon_reg;
+  // --------------------------------- End of Avalon MM bus signals ----------------------//
 
-  logic rst, read_en, wr_en;
-  logic [17:0] address_in;
-  logic [15:0] wr_data;
-  logic read_valid, wr_valid;
-  logic read_busy, wr_busy;
-  logic [15:0] read_data;
+  //-----------------------------------Start of external SRAM interface signals-----------------------//
+  logic read_n_avalon_reg, write_n_avalon_reg;
+  logic [31:0] address_n_avalon_reg;
+  logic [31:0] readData_avalon_reg;
+  logic [31:0] writeData_avalon_reg;
+  logic [3:0] byteEnable_n_avalon_reg;
+  // --------------------------------- End of external SRAM interface signals ----------------------//
+
+  //-----------------------------------Start of SRAM controller signals-----------------------//
+  logic read_sram_reg, write_sram_reg;
+  logic [17:0] address_sram_reg;
+  logic rdValid_sram_reg, wrValid_sram_reg;
+  logic [15:0] wrData_sram_reg, rdData_sram_reg;
+  // --------------------------------- End of SRAM controller signals ----------------------//
+
+  //-----------------------------------Start of internal signals-----------------------//
+  logic read_n_avalon_reg, write_n_avalon_reg;
+  logic [31:0] address_n_avalon_reg;
+  logic [31:0] readData_avalon_reg;
+  logic [31:0] writeData_avalon_reg;
+  logic [3:0] byteEnable_n_avalon_reg;
+  // --------------------------------- End of internal signals ----------------------//
 
   typedef enum {
     IDLE,
-    READ,
+    READ_ZERO,
+    READ_ONE,
     WRITE
   } avalon_state_t;
   avalon_state_t current_state, next_state;
@@ -48,10 +66,10 @@ module AvalonSRAM (
   always_comb begin
     unique case (current_state)
       IDLE: begin
-        next_state <= (chipselect && ~read_n) ? READ : IDLE;
+        next_state = (chipselect && ~read_n) ? READ : IDLE;
       end
       READ: begin
-        next_state <= (chipselect && ~read_n) ? READ: IDLE;
+        next_state = (chipselect && ~read_n) ? READ: IDLE;
       end
     endcase
   end
@@ -78,6 +96,7 @@ module AvalonSRAM (
     .ub_n_sram(ub_n_sram)
   );
 
-  assign waitrequest = (read_en && ~read_valid);
+  assign waitrequest = waitrequest_reg;
+  assign readData = {read_data_avalon_reg_MSB, read_data_avalon_reg_LSB};
 
 endmodule
