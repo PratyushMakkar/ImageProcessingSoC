@@ -20,7 +20,7 @@ module AvalonSRAM (
 
   typedef enum logic [2:0] {
     SRAM_IDLE,
-    SRAM_BUSY
+    SRAM_BUSY,
   } pipelined_state_t;
 
   pipelined_state_t currState = IDLE;
@@ -31,15 +31,19 @@ module AvalonSRAM (
   logic [1:0] byteEnableIn, byteEnableOut;
   logic [15:0] writeDataIn, writeDataOut;
   logic readEn, writeEn;
-  logic isEmptyAddressRX, isEmptyByteEnableRX, isFullDataRX;
+  logic isEmptyAddressRX, isEmptyByteEnableRX, isEmptyDataRX;
   logic isFullAddressRX, isFullByteEnableRX,  isFullDataRX;
- 
+  logic isAlmostFullAddressRX, isAlmostFullByteEnableRX,  isAlmostFullDataRX;
+  
   logic writeEnableRX:
+  logic writeEnableDataRX;
   logic readEnableRX;
+  logic readEnableDataRX;
 
   /*--------- TX FIFO signals------*/
   logic [17:0] dataInTX, dataOutTX;
   logic isEmptyDataTX, isFullDataTX;
+  logic isAlmostFullDataTX;
 
   logic writeEnableTX:
   logic readEnableTX;
@@ -50,6 +54,7 @@ module AvalonSRAM (
   logic readEnableSRAM, writeEnableSRAM;
   logic [15:0] readDataReg;
 
+  logic isReadLatch;
 
   SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(18)) AddressFIFO (
     .clk(clk),
@@ -58,6 +63,7 @@ module AvalonSRAM (
     .dataOut(addressDataOut),
     .isEmpty(isEmptyAddressRX),
     .isFull(isFullAddressRX),
+    .isAlmostFull(isAlmostFullAddressRX),
     .writeEn(writeEnableRX),
     .readEn(readEnableRX)
   );
@@ -66,9 +72,10 @@ module AvalonSRAM (
     .clk(clk),
     .rst(rst),
     .dataIn(byteEnable_n),
-    .dataOut(addressDataOut),
+    .dataOut(byteEnableOut),
     .isEmpty(isEmptyByteEnableRX),
     .isFull(isFullByteEnableRX),
+    .isAlmostFull(isAlmostFullByteEnableRX),
     .writeEn(writeEnableRX),
     .readEn(readEnableRX)
   );
@@ -76,12 +83,13 @@ module AvalonSRAM (
   SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(16)) WriteDataFIFO (
     .clk(clk),
     .rst(rst),
-    .dataIn(writeDataIn),
-    .dataOut(writeDataIn),
+    .dataIn(writeData),
+    .dataOut(writeDataOut),
     .isEmpty(isEmptyDataTX),
     .isFull(isFullDataRX),
-    .writeEn(writeEnableRX),
-    .readEn(readEnableRX)
+    .isAlmostFull(isAlmostFullByteEnableRX)
+    .writeEn(writeEnableDataRX),
+    .readEn(readEnableDataRX)
   );
 
   SRAMController Controller (
@@ -106,8 +114,9 @@ module AvalonSRAM (
     .rst(rst),
     .dataIn(dataInTX),
     .dataOut(dataOutTX),
-    .isEmpty(isEmptyDataTX),
+    .isEmpty(isEmptyDataRX),
     .isFull(isFullDataTX),
+    .isAlmostFull(isAlmostFullDataTX),
     .writeEn(writeEnableTX),
     .readEn(readEnableTX)
   );
@@ -118,11 +127,15 @@ module AvalonSRAM (
       if (!isFullAddressRX) begin
         waitrequest = 1'b0;
         writeEnableRX = 1'b1;
+        writeEnableDataRX = !write_n;
       end else begin
         waitrequest = 1'b1;
         writeEnableRX = 1'b0;
+        writeEnableDataRX = 1'b0;
       end 
     end else begin
+      waitrequest = 1'b0;
+      writeEnableDataRX = 1'b0;
       writeEnableRX = 1'b0;
       {addressDataIn, byteEnableIn} = 'd0;
     end
@@ -135,39 +148,55 @@ module AvalonSRAM (
       readData = dataOutTX;
     end else begin
       readdatavalid = 1'b0;
-      readEnableTX = 1'b0l
+      readEnableTX = 1'b0;
       readData = 'd0;
     end
   end
 
   always_comb begin : SRAM_INTERFACE
     unique case (currState)
-      SRAM_IDLE:
+      SRAM_IDLE: begin
         {readEnableSRAM, writeEnableSRAM} = {1'b0, 1'b0};
         writeEnableTX = 1'b0;
-        if (!isEmptyAddressRX && !isFullDataTX) begin
+        if (!isEmptyAddressRX && !isFullAddressRX) begin
           nextState = SRAM_BUSY;
           readEnableRX = 1'b1;
+          readEnableDataRX = !isEmptyDataRX;
         end else begin
           nextState = SRAM_IDLE;
           readEnableRX = 1'b0;
+          readEnableDataRX = 1'b0;
         end
-
-      SRAM_BUSY:
+      end
+      SRAM_BUSY: begin
         writeEnableTX = ~read_n;  // We only write to transmit buffer if we are reading.
-        {readEnableSRAM, writeEnableSRAM} = {~read_n, ~write_n};
-        if (!isEmptyAddressRX && !isFullDataTX) begin
+        {readEnableSRAM, writeEnableSRAM} = {isReadLatch, ~isReadLatch};
+        if (!isEmptyAddressRX && !isAlmostFullAddressRX) begin /* It should be almost full */
           nextState = SRAM_BUSY;
           readEnableRX = 1'b1;
+          readEnableDataRX = !isEmptyDataRX;
         end else begin
           nextState = SRAM_IDLE;
           readEnableRX = 1'b0;
+          readEnableDataRX = 1'b0;
         end
+      end
     endcase
   end
 
   always_ff @(posedge clk) begin
     currState <= nextState;
+  end
+
+  always_ff @(posedge clk) begin : isReadLatch_Interface
+    if (nextState == SRAM_IDLE) begin
+      isReadLatch <= 1'b0;
+    end else begin
+      if (currState == SRAM_IDLE) begin
+        if (~read_n) isReadLatch <= 1'b1;
+        else isReadLatch <= 1'b0;
+      end
+    end
   end
 
 endmodule
