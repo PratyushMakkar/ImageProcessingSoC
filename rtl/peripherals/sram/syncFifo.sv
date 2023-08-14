@@ -1,4 +1,4 @@
-module SyncFifo (
+module SyncFifo #(parameter FIFO_DEPTH, FIFO_WIDTH) (
   input logic clk,
   input logic rst,
   input logic readEn,
@@ -11,21 +11,19 @@ module SyncFifo (
   output logic isFull
 );
 
-  parameter FIFO_DEPTH = 3;
-  parameter FIFO_WIDTH = 17;
-
+  logic [FIFO_DEPTH-1:0] readPtr = 'd0;
+  logic [FIFO_DEPTH:0] writePtr = 'd0;
+  logic [FIFO_DEPTH:0] nextWritePtr;
+  
   logic [FIFO_WIDTH-1:0] dataOutReg;
   logic isFullReg, isAlmostFullReg;
   logic isEmptyReg;
-
+  
   assign nextWritePtr = writePtr + 1'b1;
   assign isAlmostFullReg = ((readPtr == nextWritePtr[FIFO_DEPTH-1:0]) && (nextWritePtr[FIFO_DEPTH] == 1'b1)) ? 1'b1 : 1'b0;
   assign isFullReg = ((readPtr == writePtr[FIFO_DEPTH-1:0]) && (writePtr[FIFO_DEPTH] == 1'b1)) ? 1'b1 : 1'b0;
   assign isEmptyReg = (readPtr == writePtr[FIFO_DEPTH-1:0] && (writePtr[FIFO_DEPTH] == 1'b0)) ? 1'b1 : 1'b0;
   
-  logic [FIFO_DEPTH-1:0] readPtr = 'd0;
-  logic [FIFO_DEPTH:0] writePtr = 'd0;
-  logic [FIFO_DEPTH:0] nextWritePtr;
 
   logic [FIFO_WIDTH-1:0] data [(1<<FIFO_DEPTH)-1:0];
 
