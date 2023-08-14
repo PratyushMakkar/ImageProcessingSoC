@@ -18,12 +18,12 @@ module AvalonSRAM (
   output logic ce_n_sram, oe_n_sram, we_n_sram, lb_n_sram, ub_n_sram
 );
 
-  typedef enum logic [2:0] {
+  typedef enum logic [1:0] {
     SRAM_IDLE,
-    SRAM_BUSY,
+    SRAM_BUSY
   } pipelined_state_t;
 
-  pipelined_state_t currState = IDLE;
+  pipelined_state_t currState = SRAM_IDLE;
   pipelined_state_t nextState;
   
   /*--------- RX FIFO signals------*/
@@ -35,7 +35,7 @@ module AvalonSRAM (
   logic isFullAddressRX, isFullByteEnableRX,  isFullDataRX;
   logic isAlmostFullAddressRX, isAlmostFullByteEnableRX,  isAlmostFullDataRX;
   
-  logic writeEnableRX:
+  logic writeEnableRX;
   logic writeEnableDataRX;
   logic readEnableRX;
   logic readEnableDataRX;
@@ -45,7 +45,7 @@ module AvalonSRAM (
   logic isEmptyDataTX, isFullDataTX;
   logic isAlmostFullDataTX;
 
-  logic writeEnableTX:
+  logic writeEnableTX;
   logic readEnableTX;
 
   assign dataInTX = readDataReg;
@@ -56,7 +56,7 @@ module AvalonSRAM (
 
   logic isReadLatch;
 
-  SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(18)) AddressFIFO (
+  SyncFifo #(.FIFO_DEPTH(3), .FIFO_WIDTH(18)) AddressFIFO (
     .clk(clk),
     .rst(rst),
     .dataIn(address[17:0]),
@@ -68,7 +68,7 @@ module AvalonSRAM (
     .readEn(readEnableRX)
   );
 
-  SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(2)) ByteEnableFIFO (
+  SyncFifo #(.FIFO_DEPTH(3), .FIFO_WIDTH(2)) ByteEnableFIFO (
     .clk(clk),
     .rst(rst),
     .dataIn(byteEnable_n),
@@ -80,14 +80,14 @@ module AvalonSRAM (
     .readEn(readEnableRX)
   );
 
-  SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(16)) WriteDataFIFO (
+  SyncFifo #(.FIFO_DEPTH(3), .FIFO_WIDTH(16)) WriteDataFIFO (
     .clk(clk),
     .rst(rst),
     .dataIn(writeData),
     .dataOut(writeDataOut),
     .isEmpty(isEmptyDataTX),
     .isFull(isFullDataRX),
-    .isAlmostFull(isAlmostFullByteEnableRX)
+    .isAlmostFull(isAlmostFullDataRX),
     .writeEn(writeEnableDataRX),
     .readEn(readEnableDataRX)
   );
@@ -109,7 +109,7 @@ module AvalonSRAM (
     .ub_n_sram(ub_n_sram)
   );
 
-  SyncFifo #(.FIFO_DEPTH(3) .FIFO_WIDTH(16)) SRAMDataFIFO (
+  SyncFifo #(.FIFO_DEPTH(3), .FIFO_WIDTH(16)) SRAMDataFIFO (
     .clk(clk),
     .rst(rst),
     .dataIn(dataInTX),
