@@ -6,6 +6,7 @@ module EdgeDetectionTop (
   input logic [7:0] pixel,
 
   output logic readValid,
+  output logic sync,                  // Signals the end of column
   output logic [9:0] pixel_out_x,
   output logic [9:0] pixel_out_y,    // The pixel being calculated
   output logic [9:0] next_pixel_x,    // The pixel needed
@@ -50,9 +51,8 @@ module EdgeDetectionTop (
   logic [10:0] gx, gy;        
   logic [10:0] finalPixel;    // Unsigned
 
-  /*------------------------ End of row logic ---------------*/
-  logic isEndOfRow;
-  assign isEndOfRow = (nextCol == 'd0) ? 1'b1 : 1'b0;
+  /*------------------------ End of row/col logic ---------------*/
+  logic readValidReg;
 
   always_ff @(posedge clk) begin
     if (rst == 1'b1) begin
@@ -93,39 +93,35 @@ module EdgeDetectionTop (
   end
 
   always_comb begin : NEXT_STATE_INTERFACE
+    readValidReg = ((currentPixely >= 'd1) && (currentPixely <= ROW_NUM)) ? 1'b1 : 1'b0;
     unique case (currentState)
       IDLE: begin
         nextState = (en == 1'b1) ? FIRST_ROW : IDLE;
         {nextPixelx, nextPixely} = {'d0, 'd0};
-        readValid = 1'b0;
       end
       FIRST_ROW: begin
-        nextState = (currentPixelx == (COL_NUM-1)) ? SECOND_ROW : FIRST_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == (ROW_NUM-1)) ? {'d0, currentPixely + 'd1}: {currentPixelx + 'd1, currentPixely} ;
-        readValid = 1'b1;
+        nextState = (currentPixelx == COL_NUM) ? SECOND_ROW : FIRST_ROW;
+        {nextPixelx, nextPixely} = (currentPixelx == ROW_NUM) ? {'d0, currentPixely + 'd1}: {currentPixelx + 'd1, currentPixely} ;
       end
       SECOND_ROW: begin
-        nextState = (currentPixelx == (COL_NUM-1)) ? MIDDLE_ROW : SECOND_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == (COL_NUM-1)) ? {'d0, currentPixely + 'd1}: {currentPixelx + 'd1, currentPixely};
-        readValid = 1'b1;
+        nextState = (currentPixelx == COL_NUM) ? MIDDLE_ROW : SECOND_ROW;
+        {nextPixelx, nextPixely} = (currentPixelx == COL_NUM) ? {'d0, currentPixely + 'd1}: {currentPixelx + 'd1, currentPixely};
       end
       MIDDLE_ROW: begin
-        nextState = (currentPixelx == (COL_NUM-1) && (curr_pix_y == (ROW_NUM-1))) ? TERMINATE_ROW : MIDDLE_ROW;
-        nextPixelx = (currentPixelx == (COL_NUM-1)) ? 'd0 : (currentPixelx + 'd1);
-        nextPixely = (currentPixelx == (COL_NUM-1)) ? (currentPixely + 'd1) : currentPixely;
-        readValid = 1'b1;
+        nextState = (currentPixelx == COL_NUM) && (curr_pix_y == (ROW_NUM-1)) ? TERMINATE_ROW : MIDDLE_ROW;
+        nextPixelx = (currentPixelx == COL_NUM) ? 'd0 : (currentPixelx + 'd1);
+        nextPixely = (currentPixelx == COL_NUM) ? (currentPixely + 'd1) : currentPixely;
       end
       TERMINATE_ROW: begin
-        nextState = (currentPixelx == (COL_NUM-1)) ? IDLE : TERMINATE_ROW;
-        nextPixelx = (currentPixelx == (COL_NUM-1)) ? 'd0 : (currentPixelx + 'd1);
-        nextPixely = (currentPixelx == (COL_NUM-1)) ? 'd0 : currentPixely;
-        readValid = 1'b1;
+        nextState = (currentPixelx == COL_NUM) ? IDLE : TERMINATE_ROW;
+        nextPixelx = (currentPixelx == COL_NUM) ? 'd0 : (currentPixelx + 'd1);
+        nextPixely = (currentPixelx == COL_NUM) ? 'd0 : currentPixely;
       end
     endcase
   end
 
   always_comb begin : SOBEL_PIXEL_INTERFACE
-    
+
   end
 
   always_comb begin : EDGE_COMPUTE_INTERFACE
@@ -137,5 +133,6 @@ module EdgeDetectionTop (
     finalPixel = gx + gy;
   end
 
-  
+  assign sync = ((currentPixelx == COL_NUM) || (currentPixely == ROW_NUM)) ? 1'b1 : 1'b0;
+  assign readValid = readValidReg;
 endmodule
