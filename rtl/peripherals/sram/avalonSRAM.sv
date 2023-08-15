@@ -169,7 +169,7 @@ module AvalonSRAM (
         end
       end
       SRAM_BUSY: begin
-        writeEnableTX = ~read_n;  // We only write to transmit buffer if we are reading.
+        writeEnableTX = isReadLatch;  // We only write to transmit buffer if we are reading.
         {readEnableSRAM, writeEnableSRAM} = {isReadLatch, ~isReadLatch};
         if (!isEmptyAddressRX && !isAlmostFullAddressRX) begin /* It should be almost full */
           nextState = SRAM_BUSY;

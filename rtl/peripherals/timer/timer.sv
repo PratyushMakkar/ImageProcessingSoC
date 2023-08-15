@@ -18,6 +18,7 @@ module Timer (
 
   parameter logic [7:0] CONTROL_DEFAULT = 8'h0F;
   parameter logic REINIT_COUNTER_INDEX = 3;
+  parameter logic TIMER_DID_EXPIRE_INDEX = 5;
   
   logic [16:0] tim_control_reg;
   logic [31:0] tim_cnt_reg;
@@ -27,7 +28,7 @@ module Timer (
   logic [31:0] read_data;
   //-------------------------------------------------------------------------------------------//
   logic prescaler_rst, prescaler_irq;
-  logic [31:0] prescaler_reg, prescaler_cnt;
+  logic [31:0] prescaler_cnt;
 
   logic timer_rst, timer_interrupt;
   logic [31:0] timer_cnt;
@@ -40,10 +41,9 @@ module Timer (
   //---------------------------------------------------------------------------------------------
 
   assign synchronous_timer_reset = clr_timer_cfg | reinit_counter_cfg;
-  assign {counter_en_cfg, interrupt_en_cfg, automatic_rst_cfg, reinit_counter_cfg, clr_timer_cfg}
-    = tim_control_reg[0:4];
-  assign tim_control_reg[5] = timer_did_expire_cfg;
-
+  assign {clr_timer_cfg, reinit_counter_cfg,  automatic_rst_cfg, interrupt_en_cfg, counter_en_cfg }
+    = tim_control_reg[4:0];
+  
   assign timer_did_expire_cfg = timer_interrupt;
 
   assign prescaler_rst = (synchronous_timer_reset |
@@ -55,8 +55,8 @@ module Timer (
     .clk(clk),
     .en(counter_en_cfg),
     .rst(prescaler_rst),
-    .count(prescaler_reg),
-    .timer(prescaler_cnt)
+    .count(tim_prescaler_reg),
+    .timer(prescaler_cnt),
     .irq(prescaler_irq)
   );
 
@@ -64,12 +64,13 @@ module Timer (
     .clk(clk),
     .en(prescaler_irq),
     .rst(timer_rst),
-    .count(compare_reg),
+    .count(tim_cmp_reg),
     .timer(timer_cnt),
     .irq(timer_interrupt)
   );
 
   always_ff @(posedge clk) begin : WRITE_INTERFACE
+    tim_control_reg[TIMER_DID_EXPIRE_INDEX] = timer_did_expire_cfg;
     tim_control_reg[REINIT_COUNTER_INDEX] <= 1'b0;
 
     if (wr_en == 1'b1) begin
