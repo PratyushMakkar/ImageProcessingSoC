@@ -150,5 +150,5 @@ module EdgeDetectionTop (
   assign readValid = readValidReg;
   assign pixel_out = finalPixel;
   assign {next_pixel_x, next_pixel_y} = {nextPixelx, nextPixely};
-  assign {pixel_out_x, pixel_out_y} {currentPixelx-1, currentPixely-1};
+  assign {pixel_out_x, pixel_out_y} =  {currentPixelx-1, currentPixely-1};
 endmodule
