@@ -1,3 +1,4 @@
+// Code your design here
 module EdgeDetectionTop (
   input logic clk,
   input logic rst,
@@ -17,9 +18,9 @@ module EdgeDetectionTop (
   parameter ROW_NUM = 480;
   parameter COL_NUM = 640;
 
-  function [10:0] sobelDotProduct (input logic isPositive, input logic [7:0] vector [-1:1]);
+  function [10:0] sobelDotProduct (input logic isPositive, input logic [20:0] vector);
     logic [10:0] g;
-    g = ({3'b000, vector[0]} << 1) + {3'b000, vector[1]} + {3'b000, vector[-1]};
+    g = ({3'b000, vector[20:14]} << 1) + {3'b000, vector[13:7]} + {3'b000, vector[6:0]};
     sobelDotProduct = (isPositive == 1'b1) ? g : ~g +'d1;
   endfunction
   
@@ -53,7 +54,8 @@ module EdgeDetectionTop (
   /*------------------------ End of row/col logic ---------------*/
   logic readValidReg;
   logic [7:0] resetCache [-1:COL_NUM];
-  logic [10:0] operator [-1:1];
+  logic signed [10:0] operator [-1:1];
+  logic [10:0] gx_tmp, gy_tmp;
 
   always_comb begin
     for (logic signed [10:0]  i =-1; i<= 1; i= i+1) begin
@@ -150,11 +152,10 @@ module EdgeDetectionTop (
   end
 
   always_comb begin : EDGE_COMPUTE_INTERFACE
-    logic [10:0] gx_tmp, gy_tmp;
     gx_tmp = sobelDotProduct(1'b0, {sobelPixels[-1][-1], sobelPixels[-1][0], sobelPixels[-1][1]}) + sobelDotProduct(1'b1, {sobelPixels[1][-1], sobelPixels[1][0], sobelPixels[1][1]});
     gy_tmp = sobelDotProduct(1'b0, {sobelPixels[-1][-1], sobelPixels[0][-1], sobelPixels[1][-1]}) + sobelDotProduct(1'b1, {sobelPixels[-1][1], sobelPixels[0][1], sobelPixels[1][1]});
-    gx = (gx_tmp[10] == 1'b1) ? ~gx_tmp +'d1 : gx_tmp;
-    gy = (gy_tmp[10] == 1'b1) ? ~gy_tmp +'d1 : gy_tmp;
+    gx = (gx_tmp[10] == 1'b1) ? ~gx_tmp + 1 : gx_tmp;
+    gy = (gy_tmp[10] == 1'b1) ? ~gy_tmp + 1 : gy_tmp;
     finalPixel = gx + gy;
   end
 
