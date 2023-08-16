@@ -13,7 +13,7 @@ module EdgeDetectionTop (
   output logic [10:0] next_pixel_y,
   output logic [10:0] pixel_out
 );
-
+	
   parameter ROW_NUM = 480;
   parameter COL_NUM = 640;
 
@@ -52,6 +52,20 @@ module EdgeDetectionTop (
 
   /*------------------------ End of row/col logic ---------------*/
   logic readValidReg;
+  logic [7:0] resetCache [-1:COL_NUM];
+  logic [10:0] operator [-1:1];
+
+  always_comb begin
+    for (logic signed [10:0]  i =-1; i<= 1; i= i+1) begin
+      operator[i] = currentPixelx + i;
+    end
+  end
+
+  always_comb begin
+    for (int i = -1; i<= COL_NUM; i= i+1) begin
+      resetCache[i] = 0;
+    end
+  end
 
   always_ff @(posedge clk) begin
     if (rst == 1'b1) begin
@@ -76,18 +90,14 @@ module EdgeDetectionTop (
   always_ff @(posedge clk) begin : ROW_CACHE_LATCH
     if (waitrequest == 1'b0) begin
       if (nextState == IDLE) begin
-        for (int i =-1; i<= COL_NUM; i++) begin
-          topRowCache[i] <= 0;
-          middleRowCache[i] <= 0;
-          bottomRowCache[i] <= 0;
-      	end
+        topRowCache <= resetCache;
+        middleRowCache <= resetCache;
+        bottomRowCache <= resetCache;
       end else begin
         if (nextPixelx == 0) begin
           topRowCache <= middleRowCache;
           middleRowCache <= bottomRowCache;
-          for (int i = -1; i<= COL_NUM; i++) begin
-            bottomRowCache[i] <= 0;
-          end
+          bottomRowCache <= resetCache;
           bottomRowCache[0] <= pixel;
         end else if (nextPixelx < COL_NUM) begin
           bottomRowCache[nextPixelx] <= pixel;
@@ -95,11 +105,9 @@ module EdgeDetectionTop (
       end
     end
     if (rst == 1'b1) begin
-      for (int i =-1; i<= COL_NUM; i++) begin
-        topRowCache[i] <= 0;
-        middleRowCache[i] <= 0;
-        bottomRowCache[i] <= 0;
-      end
+      topRowCache <= resetCache;
+      middleRowCache <= resetCache;
+      bottomRowCache <= resetCache;
     end 
   end
 
@@ -112,28 +120,32 @@ module EdgeDetectionTop (
       end
       FIRST_ROW: begin
         nextState = (currentPixelx == COL_NUM) ? SECOND_ROW : FIRST_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == ROW_NUM) ? {11'd0, currentPixely + 1}: {currentPixelx + 1, currentPixely} ;
+        nextPixelx = (currentPixelx == ROW_NUM) ? 'd0: currentPixelx + 1;
+        nextPixely = (currentPixelx == ROW_NUM) ? currentPixely + 1: currentPixely;
       end
       SECOND_ROW: begin
         nextState = (currentPixelx == COL_NUM) ? MIDDLE_ROW : SECOND_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == COL_NUM) ? {11'd0, currentPixely + 1}: {currentPixelx + 1, currentPixely};
+        nextPixelx =  (currentPixelx == COL_NUM) ? 'd0: currentPixelx + 1;
+        nextPixely = (currentPixelx == COL_NUM) ? currentPixely + 1: currentPixely;
       end
       MIDDLE_ROW: begin
         nextState = (currentPixelx == COL_NUM) && (currentPixely == (ROW_NUM-1)) ? TERMINATE_ROW : MIDDLE_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == COL_NUM) ? {11'd0, currentPixely+1} : {currentPixelx + 1, currentPixely};
+        nextPixelx = (currentPixelx == COL_NUM) ? 'd0: currentPixelx + 1;
+        nextPixely = (currentPixelx == COL_NUM) ? currentPixely+1 : currentPixely;
       end
       TERMINATE_ROW: begin
         nextState = (currentPixelx == COL_NUM) ? IDLE : TERMINATE_ROW;
-        {nextPixelx, nextPixely} = (currentPixelx == COL_NUM) ? {11'd0, 11'd0}: {currentPixelx + 1, currentPixely};
+        nextPixelx = (currentPixelx == COL_NUM) ? 'd0 : currentPixelx + 1;
+       nextPixely = (currentPixelx == COL_NUM) ?  'd0: currentPixely;
       end
     endcase
   end
 
   always_comb begin : SOBEL_PIXEL_INTERFACE
-    for (int i = -1; i<=1; i++) begin
-      sobelPixels[i][-1] = bottomRowCache[currentPixelx+i];
-      sobelPixels[i][0] = middleRowCache[currentPixelx+i];
-      sobelPixels[i][1] = topRowCache[currentPixelx+i];
+    for (logic signed [10:0] i = -1; i<=1; i++) begin
+      sobelPixels[i][-1] = bottomRowCache[operator[i]];
+      sobelPixels[i][0] = middleRowCache[operator[i]];
+      sobelPixels[i][1] = topRowCache[operator[i]];
     end
   end
 
@@ -150,5 +162,7 @@ module EdgeDetectionTop (
   assign readValid = readValidReg;
   assign pixel_out = finalPixel;
   assign {next_pixel_x, next_pixel_y} = {nextPixelx, nextPixely};
-  assign {pixel_out_x, pixel_out_y} =  {currentPixelx-1, currentPixely-1};
+  assign pixel_out_x = (currentPixelx-1);
+  assign pixel_out_y = (currentPixely-1);
+ 
 endmodule
