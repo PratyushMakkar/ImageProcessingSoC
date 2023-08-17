@@ -1,4 +1,3 @@
-// Code your design here
 module EdgeDetectionTop (
   input logic clk,
   input logic rst,
@@ -8,19 +7,19 @@ module EdgeDetectionTop (
 
   output logic readValid,
   output logic sync,                  // Signals the end of column
-  output logic [10:0] pixel_out_x,
-  output logic [10:0] pixel_out_y,    // The pixel being calculated
-  output logic [10:0] next_pixel_x,    // The pixel needed
-  output logic [10:0] next_pixel_y,
-  output logic [10:0] pixel_out
+  output logic  [10:0] pixel_out_x,
+  output logic  [10:0] pixel_out_y,    // The pixel being calculated
+  output logic  [10:0] next_pixel_x,    // The pixel needed
+  output logic  [10:0] next_pixel_y,
+  output logic  [10:0] pixel_out
 );
 	
   parameter ROW_NUM = 480;
   parameter COL_NUM = 640;
 
-  function [10:0] sobelDotProduct (input logic isPositive, input logic [20:0] vector);
+  function [10:0] sobelDotProduct (input logic isPositive, input logic [23:0] vector);
     logic [10:0] g;
-    g = ({3'b000, vector[20:14]} << 1) + {3'b000, vector[13:7]} + {3'b000, vector[6:0]};
+    g = ({3'b000, vector[15:8]} << 1) + {3'b000, vector[23:16]} + {3'b000, vector[7:0]};
     sobelDotProduct = (isPositive == 1'b1) ? g : ~g +'d1;
   endfunction
   
@@ -42,9 +41,9 @@ module EdgeDetectionTop (
   logic signed [10:0] nextPixely = 0;
 
   /*-------------------- Cache for rows ----------------------*/
-  logic [7:0] topRowCache [-1:COL_NUM];
-  logic [7:0] middleRowCache [-1:COL_NUM];
-  logic [7:0] bottomRowCache [-1:COL_NUM];
+  logic [7:0] topRowCache [-2:COL_NUM];
+  logic [7:0] middleRowCache [-2:COL_NUM];
+  logic [7:0] bottomRowCache [-2:COL_NUM];
 
   /*------------------------ Registers for each pixel----------*/
   logic [7:0] sobelPixels [-1:1][-1:1];
@@ -53,18 +52,18 @@ module EdgeDetectionTop (
 
   /*------------------------ End of row/col logic ---------------*/
   logic readValidReg;
-  logic [7:0] resetCache [-1:COL_NUM];
-  logic signed [10:0] operator [-1:1];
+  logic [7:0] resetCache [-2:COL_NUM];
+  logic signed [10:0] operator [-2:0];
   logic [10:0] gx_tmp, gy_tmp;
 
   always_comb begin
-    for (logic signed [10:0]  i =-1; i<= 1; i= i+1) begin
+    for (logic signed [10:0]  i =-2; i<= 0; i= i+1) begin
       operator[i] = currentPixelx + i;
     end
   end
 
   always_comb begin
-    for (int i = -1; i<= COL_NUM; i= i+1) begin
+    for (int i = -2; i<= COL_NUM; i= i+1) begin
       resetCache[i] = 0;
     end
   end
@@ -100,9 +99,9 @@ module EdgeDetectionTop (
           topRowCache <= middleRowCache;
           middleRowCache <= bottomRowCache;
           bottomRowCache <= resetCache;
-          bottomRowCache[0] <= pixel;
+          bottomRowCache[0] <= (nextPixely < ROW_NUM) ? pixel : 'd0;
         end else if (nextPixelx < COL_NUM) begin
-          bottomRowCache[nextPixelx] <= pixel;
+          bottomRowCache[nextPixelx] <= (nextPixely < ROW_NUM) ? pixel : 'd0;
         end
       end
     end
@@ -122,8 +121,8 @@ module EdgeDetectionTop (
       end
       FIRST_ROW: begin
         nextState = (currentPixelx == COL_NUM) ? SECOND_ROW : FIRST_ROW;
-        nextPixelx = (currentPixelx == ROW_NUM) ? 'd0: currentPixelx + 1;
-        nextPixely = (currentPixelx == ROW_NUM) ? currentPixely + 1: currentPixely;
+        nextPixelx = (currentPixelx == COL_NUM) ? 'd0: currentPixelx + 1;
+        nextPixely = (currentPixelx == COL_NUM) ? currentPixely + 1: currentPixely;
       end
       SECOND_ROW: begin
         nextState = (currentPixelx == COL_NUM) ? MIDDLE_ROW : SECOND_ROW;
@@ -145,9 +144,9 @@ module EdgeDetectionTop (
 
   always_comb begin : SOBEL_PIXEL_INTERFACE
     for (logic signed [10:0] i = -1; i<=1; i++) begin
-      sobelPixels[i][-1] = bottomRowCache[operator[i]];
-      sobelPixels[i][0] = middleRowCache[operator[i]];
-      sobelPixels[i][1] = topRowCache[operator[i]];
+      sobelPixels[i][-1] = bottomRowCache[operator[i-1]];
+      sobelPixels[i][0] = middleRowCache[operator[i-1]];
+      sobelPixels[i][1] = topRowCache[operator[i-1]];
     end
   end
 
@@ -159,7 +158,7 @@ module EdgeDetectionTop (
     finalPixel = gx + gy;
   end
 
-  assign sync = ((currentPixelx == COL_NUM) || (currentPixely == ROW_NUM)) ? 1'b1 : 1'b0;
+  assign sync = ((nextPixelx == COL_NUM) || (nextPixely == ROW_NUM)) ? 1'b1 : 1'b0;
   assign readValid = readValidReg;
   assign pixel_out = finalPixel;
   assign {next_pixel_x, next_pixel_y} = {nextPixelx, nextPixely};
