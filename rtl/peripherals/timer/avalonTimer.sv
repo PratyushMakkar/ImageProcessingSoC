@@ -7,7 +7,8 @@ module AvalonTimer (
   input logic write_n,
   input logic [31:0] address,
   output logic [31:0] readData,
-  input logic [31:0] writeData
+  input logic [31:0] writeData,
+  output logic irq
 );
 
   parameter logic [1:0] TIM1_OFFSET = 2b'00;
@@ -49,7 +50,6 @@ module AvalonTimer (
     .rd_en(rd_en_reg[0]),
     .wr_data(writeData),
     .rd_data(readData),
-    .timer(timers[0]),
     .interrupt(interrupts[0])
   );
 
@@ -62,7 +62,6 @@ module AvalonTimer (
     .rd_en(rd_en_reg[1]),
     .wr_data(writeData),
     .rd_data(readData),
-    .timer(timers[1]),
     .interrupt(interrupts[1])
   );
 
@@ -75,7 +74,6 @@ module AvalonTimer (
     .rd_en(rd_en_reg[2]),
     .wr_data(writeData),
     .rd_data(readData),
-    .timer(timers[2]),
     .interrupt(interrupts[2])
   );
 
@@ -88,7 +86,6 @@ module AvalonTimer (
     .rd_en(rd_en_reg[3]),
     .wr_data(writeData),
     .rd_data(readData),
-    .timer(timers[3]),
     .interrupt(interrupts[3])
   );
 
@@ -98,4 +95,5 @@ module AvalonTimer (
                     : (rd_en_reg[3] == 1'b1) ? read_data_reg[3]
                     : 32'hzzzzzzz);
 
+    assign irq = interrupts[3] | interrupts[2] | interrupts[1] | interrupts[0];
 endmodule
