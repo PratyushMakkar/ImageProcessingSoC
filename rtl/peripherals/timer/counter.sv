@@ -7,12 +7,20 @@ module Counter (
   output logic irq
 );
 
+  enum logic {INITIAL, OPERATING} timerState = INITAL;
   logic [31:0] timer_reg;
+  
+  always_ff @(posedge clk) begin
+    if (timerState == INITAL) begin
+      timerState <= OPERATING;
+      timer_reg = 32'd0;
+    end
+  end
 
   always_ff @(posedge clk) begin
     if (rst == 1'b1) begin
       timer_reg <= 'd0;
-    end else if (timer_reg != count) timer_reg <= timer_reg + 'd1;
+    end else timer_reg <= timer_reg + 'd1;
   end
 
   assign timer = timer_reg;

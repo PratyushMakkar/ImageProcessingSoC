@@ -61,5 +61,6 @@
     "vector": "cpp",
     "algorithm": "cpp",
     "span": "cpp"
-  }
+  },
+  "cmake.sourceDirectory": "/Users/pratyushmakkar/IdeaProjects/PingPong/firmware"
 }

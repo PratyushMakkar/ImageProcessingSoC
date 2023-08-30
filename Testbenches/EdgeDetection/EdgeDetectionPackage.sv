@@ -1,7 +1,7 @@
 package EdgeDetectionPackage;
 
-   localparam ROW_NUM = 480;
-   localparam COL_NUM = 640;
+  localparam ROW_NUM = 480;
+  localparam COL_NUM = 640;
 
   class ImagePixelPacket;
     rand logic [7:0] pixels [-2:COL_NUM][-2:ROW_NUM];
