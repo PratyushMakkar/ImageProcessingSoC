@@ -4,8 +4,10 @@ module VGADriver (
   input logic [23:0] colour_in,
   output logic [9:0] x_pixel,
   output logic [9:0] y_pixel,
+  output logic [9:0] hsyncReg,
+  output logic [9:0] vsyncReg,
   output logic hsync,
-  output logic vscync,
+  output logic vsync,
   output logic [7:0] red,
   output logic [7:0] green,
   output logic [7:0] blue,
@@ -28,7 +30,7 @@ module VGADriver (
   
   parameter HIGH = 1'b1;
   parameter LOW = 1'b0;
-  localparam [9:0] RESET_COUNTER = 0;
+  localparam logic [9:0] RESET_COUNTER = 0;
   
   typedef enum  {
     HSYNC_STATE_ACTIVE = 1,
@@ -50,15 +52,15 @@ module VGADriver (
   vsync_state_t vsync_state = VSYNC_STATE_ACTIVE;
   vsync_state_t vsync_nextState;
   
-  logic [9:0] x_pixel_reg,
-  logic [9:0] y_pixel_reg,
-  logic       hsync_reg,
-  logic       vscync_reg,
-  logic [7:0] red_reg,
-  logic [7:0] green_reg,
-  logic [7:0] blue_reg,
-  logic       sync_reg,
-  logic       blank_reg,
+  logic [9:0] x_pixel_reg;
+  logic [9:0] y_pixel_reg;
+  logic       hsync_reg;
+  logic       vsync_reg;
+  logic [7:0] red_reg;
+  logic [7:0] green_reg;
+  logic [7:0] blue_reg;
+  logic       sync_reg;
+  logic       blank_reg;
 
   logic [9:0] hsync_count_reg = 0;
   logic [9:0] vsync_count_reg = 0;
@@ -66,7 +68,7 @@ module VGADriver (
   logic line_done = 1'b0;
   logic is_active;
 
-  assign is_active = (hsync_state == HSYNC_STATE_ACTIVE) && (vsync_state == VSYNC_STATE_ACTIVE);
+  assign is_active = ((hsync_state == HSYNC_STATE_ACTIVE) && (vsync_state == VSYNC_STATE_ACTIVE)) ? 1'b1 : 1'b0;
   
   always_ff @(posedge clk) begin
     if (rst == 1'b0) begin
@@ -126,19 +128,19 @@ module VGADriver (
   always_comb begin : HORIZONTEL_SYNC_LOGIC_BLOCK
     unique case (hsync_state) 
       HSYNC_STATE_ACTIVE: begin
-        line_done = LOW:
+        line_done = LOW;
         hsync_nextState = (hsync_count_reg == HSYNC_ACTIVE) ? HSYNC_STATE_FRONT_PORCH : HSYNC_STATE_ACTIVE;
         hsync_reg = HIGH;
       end
 
       HSYNC_STATE_FRONT_PORCH: begin
-        line_done = LOW:
+        line_done = LOW;
         hsync_nextState = (hsync_count_reg == HSYNC_FRONT_PORCH) ? HSYNC_STATE_SYNC_SIGN : HSYNC_STATE_FRONT_PORCH;
         hsync_reg = HIGH;
       end
 
       HSYNC_STATE_SYNC_SIGN: begin
-        line_done = LOW:
+        line_done = LOW;
         hsync_nextState = (hsync_count_reg == HSYNC_STATE_SYNC_SIGN) ? HSYNC_STATE_BACK_PORCH : HSYNC_STATE_SYNC_SIGN;
         hsync_reg = LOW;
       end
@@ -156,9 +158,9 @@ module VGADriver (
       VSYNC_STATE_ACTIVE: begin
         vsync_reg = HIGH;
         if (line_done == HIGH) begin
-          vsync_nextState = (vsync_count_reg == VSYNC_ACTIVE) ? VSYNC_STATE_FRONT_PORCH : VYSNC_STATE_ACTIVE;
+          vsync_nextState = (vsync_count_reg == VSYNC_ACTIVE) ? VSYNC_STATE_FRONT_PORCH : VSYNC_STATE_ACTIVE;
         end else 
-          vsync_nextState = VSYNC_STATE_ACTIVE
+          vsync_nextState = VSYNC_STATE_ACTIVE;
       end
 
       VSYNC_STATE_FRONT_PORCH: begin
@@ -170,7 +172,7 @@ module VGADriver (
       end
 
       VSYNC_STATE_SYNC_SIGN: begin
-        vscync_reg = LOW;
+        vsync_reg = LOW;
         if (line_done == HIGH) begin
           vsync_nextState = (vsync_count_reg == VSYNC_STATE_SYNC_SIGN) ? VSYNC_STATE_BACK_PORCH : VSYNC_STATE_SYNC_SIGN;
         end else
@@ -188,19 +190,19 @@ module VGADriver (
   end
 
   always_comb begin : RGB_REGISTER_ASSIGNMENT
-    if (hsync_state == HSYNC_STATE_ACTIVE) begin
-      x_pixel_reg = (hsync_count_reg == HSYNC_ACTIVE) ? RESET_COUNTER : (hsync_count_reg +1);
-    end else x_pixel_reg = RESET_COUNTER;
+    x_pixel_reg = (vsync_nextState != VSYNC_STATE_ACTIVE) ? RESET_COUNTER
+                  : (hsync_nextState != HSYNC_STATE_ACTIVE) ? RESET_COUNTER
+                  : (line_done == HIGH) ? RESET_COUNTER : hsync_count_reg +1;
+    
+    y_pixel_reg =  (vsync_nextState != VSYNC_STATE_ACTIVE) ? RESET_COUNTER
+    : (hsync_nextState != HSYNC_STATE_ACTIVE) ? (vsync_count_reg == VSYNC_ACTIVE) ? RESET_COUNTER : vsync_count_reg + 1
+                  : (line_done == HIGH) ? vsync_count_reg +1 : vsync_count_reg;
 
-    if (vsync_state == VSYNC_STATE_ACTIVE) begin
-      x_pixel_reg = (vsync_count_reg == VSYNC_ACTIVE) ? RESET_COUNTER : (vsync_count_reg +1);
-    end else y_pixel_reg = RESET_COUNTER;
-      
     red_reg = is_active ? colour_in[23:16] : 8'h00;
     blue_reg = is_active ? colour_in[15:8] : 8'h00;
     green_reg = is_active ? colour_in[7:0] : 8'h00;
     blank_reg = hsync_reg & vsync_reg;
-    sync_reg = 1'b1;
+    sync_reg = 1'b0;
   end
 
   assign clkOut = clk;
@@ -211,7 +213,8 @@ module VGADriver (
   assign blue = blue_reg;
   assign blank = blank_reg;
   assign sync = sync_reg;
-
+  assign hsyncReg = hsync_count_reg;
+  assign vsyncReg = vsync_count_reg;
   assign hsync = hsync_reg;
-  assign vscync = vscync_reg;
+  assign vsync = vsync_reg;
 endmodule
