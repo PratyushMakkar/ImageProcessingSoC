@@ -95,5 +95,5 @@ module AvalonTimer (
                     : (rd_en_reg[3] == 1'b1) ? read_data_reg[3]
                     : 32'hzzzzzzz);
 
-    assign irq = interrupts[3] | interrupts[2] | interrupts[1] | interrupts[0];
+  assign irq = interrupts[3] | interrupts[2] | interrupts[1] | interrupts[0];
 endmodule
