@@ -60,7 +60,8 @@
     "variant": "cpp",
     "vector": "cpp",
     "algorithm": "cpp",
-    "span": "cpp"
+    "span": "cpp",
+    "defs.h": "c"
   },
   "cmake.sourceDirectory": "/Users/pratyushmakkar/IdeaProjects/PingPong/firmware"
 }
