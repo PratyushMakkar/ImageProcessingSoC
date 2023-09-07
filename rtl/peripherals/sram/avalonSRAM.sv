@@ -1,5 +1,6 @@
 `include "SRAMController.sv"
-`include "syncFifo.sv"
+`include "../syncFifo.sv"
+
 module AvalonSRAM (
   input logic rst,
   input logic clk,
